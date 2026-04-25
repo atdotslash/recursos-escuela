@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potencia e Impedancia Pro - EEST N° 1 Zárate</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            background-color: #f0f4f8; margin: 0; padding: 20px;
+        }
+        .container {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 1200px; width: 100%; text-align: center;
+        }
+        
+        /* --- ENCABEZADO INSTITUCIONAL --- */
+        .school-header {
+            display: flex; align-items: center; justify-content: center;
+            gap: 20px; margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 3px solid #10b981; /* Verde energía */
+        }
+        .school-logo { width: 75px; height: auto; }
+        .school-info { text-align: left; }
+        .school-info h3 { margin: 0; color: #1e293b; font-size: 1.8em; }
+        .school-info a {
+            text-decoration: none; color: #E1306C; font-weight: bold;
+            display: flex; align-items: center; gap: 5px; font-size: 1.1em;
+        }
+        .instagram-icon { width: 20px; height: 20px; }
+
+        /* --- LAYOUT --- */
+        .app-layout {
+            display: grid; grid-template-columns: 320px 1fr; gap: 20px;
+            text-align: left; margin-top: 15px;
+        }
+        @media (max-width: 900px) { .app-layout { grid-template-columns: 1fr; } }
+
+        /* --- PANEL IZQUIERDO (CONTROLES) --- */
+        .panel { background: #f1f5f9; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        .panel h4 { margin-top: 0; color: #334155; border-bottom: 2px solid #94a3b8; padding-bottom: 5px; }
+        
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-weight: bold; color: #475569; margin-bottom: 4px; font-size: 0.85em; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 8px; border: 1px solid #94a3b8; border-radius: 4px;
+            font-size: 1em; font-weight: bold; box-sizing: border-box; font-family: monospace;
+        }
+        
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* --- PANTALLAS DE RESULTADOS --- */
+        .lcd-panel {
+            background: #0f172a; color: #38bdf8; padding: 15px; border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace; margin-top: 15px;
+            border: 2px solid #334155;
+        }
+        .lcd-panel p { margin: 5px 0; font-size: 0.85em; color: #94a3b8; }
+        .lcd-panel .val { font-size: 1.3em; font-weight: bold; display: block; margin-bottom: 8px; color: #fff;}
+        .val.active { color: #10b981; } /* Verde P */
+        .val.reactive { color: #f59e0b; } /* Naranja Q */
+        .val.apparent { color: #38bdf8; } /* Azul S */
+
+        /* --- ÁREA DE GRÁFICOS --- */
+        .graphs-container { display: flex; flex-direction: column; gap: 20px; }
+        .canvas-box {
+            background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;
+            padding: 10px; text-align: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .canvas-box h5 { margin: 0 0 10px 0; color: #475569; }
+        
+        /* Canvas Triangulos grandes */
+        canvas.tri-canvas { max-width: 100%; height: auto; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 4px; }
+        
+        /* Canvas Osciloscopio PRO CRT */
+        .scope-bezel {
+            border: 8px solid #334155; border-radius: 15px; background: #000;
+            padding: 5px; position: relative; overflow: hidden;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        canvas.scope-canvas {
+            display: block; width: 100%; height: auto; 
+            background: #000; filter: blur(0.5px) contrast(1.2) drop-shadow(0 0 4px rgba(56, 189, 248, 0.5)); /* Bloom effect */
+        }
+        /* Phosphor screen reflection */
+        .scope-bezel::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%); pointer-events: none;
+        }
+
+        .footer-sig {
+            margin-top: 25px; font-size: 0.9em; color: #64748b;
+            border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="school-header">
+        <img src="https://atdotslash.github.io/recursos-escuela/LOGO-INDU.jpg" alt="Logo Indu" class="school-logo">
+        <div class="school-info">
+            <h3>EEST N° 1, Zárate, Pcia. de Bs. As.</h3>
+            <a href="https://www.instagram.com/zarateindu/" target="_blank">@zarateindu</a>
+        </div>
+    </div>
+
+    <h2 style="color: #0f172a; margin-bottom: 5px;">Análisis de Potencia e Impedancia a 50 Hz</h2>
+    <p style="color: #64748b; margin-top: 0; font-size: 0.95em;">Sirve para comprender el desfase de los componentes básicos con osciloscopio simulado.</p>
+
+    <div class="app-layout">
+        <div class="panel">
+            <h4>1. Fuente de Alimentación</h4>
+            <div class="row-2">
+                <div class="input-group">
+                    <label>Tensión (V)</label>
+                    <input type="number" id="vInput" value="220" min="12" step="10">
+                </div>
+                <div class="input-group">
+                    <label>Sistema</label>
+                    <select id="sysInput">
+                        <option value="1">Monofásico</option>
+                        <option value="3">Trifásico</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 style="margin-top: 10px;">2. Carga (Componentes)</h4>
+            <div class="input-group">
+                <label>Resistencia (R) [Ohms / Ω]</label>
+                <input type="number" id="rInput" value="10" min="0" step="1">
+            </div>
+            <div class="input-group">
+                <label>Inductancia (L) [Henrios / H]</label>
+                <input type="number" id="lInput" value="0.11" min="0" step="0.01">
+            </div>
+            <div class="input-group">
+                <label>Capacitancia (C) [Faradios / F]</label>
+                <input type="number" id="cInput" value="0.0001" min="0" step="0.00001">
+            </div>
+
+            <div class="lcd-panel">
+                <div class="row-2">
+                    <div>
+                        <p>Impedancia (Z):</p>
+                        <span class="val" id="zOut">10 Ω</span>
+                    </div>
+                    <div>
+                        <p>Corriente (I L):</p>
+                        <span class="val" id="iOut">22 A</span>
+                    </div>
+                </div>
+                <div class="row-2">
+                    <div>
+                        <p>Factor de Potencia:</p>
+                        <span class="val" id="pfOut">1.000 (R)</span>
+                    </div>
+                    <div>
+                        <p>Desfase (φ):</p>
+                        <span class="val" id="degOut">0°</span>
+                    </div>
+                </div>
+                
+                <hr style="border-color: #334155; margin: 10px 0;">
+                
+                <p>Potencia Activa (P) - Útil:</p>
+                <span class="val active" id="pOut">0 W</span>
+                
+                <p>Potencia Reactiva (Q) - Campo:</p>
+                <span class="val reactive" id="qOut">0 VAR</span>
+                
+                <p>Potencia Aparente (S) - Total:</p>
+                <span class="val apparent" id="sOut">0 VA</span>
+            </div>
+        </div>
+
+        <div class="graphs-container">
+            <div class="canvas-box">
+                <h5>Simulador CRT: Tensión (Fósforo Fino) vs Corriente (Planchada)</h5>
+                <div class="scope-bezel">
+                    <canvas id="waveCanvas" width="700" height="400" class="scope-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="canvas-box">
+                <h5>Triángulo de Impedancia Z</h5>
+                <canvas id="zTriangleCanvas" width="700" height="500" class="tri-canvas"></canvas>
+            </div>
+            
+            <div class="canvas-box">
+                <h5>Triángulo de Potencias P - Q - S</h5>
+                <canvas id="powerTriangleCanvas" width="700" height="500" class="tri-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-sig">
+        Área: Proyecto y Diseño Electromecánico | EEST N° 1 "Almirante Guillermo Brown"<br>
+        <strong>Preparado por: Prof. SANDOVAL Edgardo | 2026</strong>
+    </div>
+</div>
+
+<script>
+    // Referencias DOM
+    const vInput = document.getElementById('vInput');
+    const sysInput = document.getElementById('sysInput');
+    const rInput = document.getElementById('rInput');
+    const lInput = document.getElementById('lInput');
+    const cInput = document.getElementById('cInput');
+    
+    // Outputs
+    const zOut = document.getElementById('zOut');
+    const iOut = document.getElementById('iOut');
+    const pfOut = document.getElementById('pfOut');
+    const degOut = document.getElementById('degOut');
+    const pOut = document.getElementById('pOut');
+    const qOut = document.getElementById('qOut');
+    const sOut = document.getElementById('sOut');
+
+    // Canvas
+    const waveCanvas = document.getElementById('waveCanvas');
+    const waveCtx = waveCanvas.getContext('2d');
+    const zCanvas = document.getElementById('zTriangleCanvas');
+    const zCtx = zCanvas.getContext('2d');
+    const pCanvas = document.getElementById('powerTriangleCanvas');
+    const pCtx = pCanvas.getContext('2d');
+
+    // Variables globales de cálculo
+    let R_c=10, XL_c=0, XC_c=0, Xtot_c=0, Z_c=10, phaseRad_c=0, P_c=0, Q_c=0, S_c=0, IL_c=0;
+
+    function resetOutputs() {
+        zOut.innerText = "0 Ω"; iOut.innerText = "0 A"; pfOut.innerText = "0.00"; degOut.innerText = "0°";
+        pOut.innerText = "0 W"; qOut.innerText = "0 VAR"; sOut.innerText = "0 VA";
+        zCtx.clearRect(0,0, zCanvas.width, zCanvas.height);
+        pCtx.clearRect(0,0, pCanvas.width, pCanvas.height);
+        // Osciloscopio se resetea por animacion
+    }
+
+    function calculate() {
+        const V_line = parseFloat(vInput.value) || 0;
+        const sys = parseInt(sysInput.value);
+        const R = parseFloat(rInput.value) || 0; R_c = R;
+        const L = parseFloat(lInput.value) || 0;
+        const C = parseFloat(cInput.value) || 0;
+        
+        const f = 50;
+        const omega = 2 * Math.PI * f;
+
+        XL_c = (L > 0) ? omega * L : 0;
+        XC_c = (C > 0) ? 1 / (omega * C) : 0;
+        Xtot_c = XL_c - XC_c;
+
+        Z_c = Math.sqrt(R*R + Xtot_c*Xtot_c);
+        
+        if(Z_c === 0 || V_line === 0) { resetOutputs(); resetState(); return; }
+
+        phaseRad_c = Math.atan2(Xtot_c, R);
+        const cosFi = Math.cos(phaseRad_c);
+        const deg = phaseRad_c * (180 / Math.PI);
+
+        if(sys === 1) {
+            IL_c = V_line / Z_c;
+            S_c = V_line * IL_c;
+        } else {
+            const V_phase = V_line / Math.sqrt(3);
+            const I_phase = V_phase / Z_c;
+            IL_c = I_phase;
+            S_c = Math.sqrt(3) * V_line * IL_c;
+        }
+
+        P_c = S_c * cosFi;
+        Q_c = S_c * Math.sin(phaseRad_c);
+
+        // Actualizar UI
+        zOut.innerText = Z_c.toFixed(2) + " Ω";
+        iOut.innerText = IL_c.toFixed(2) + " A";
+        pfOut.innerText = cosFi.toFixed(3) + ((phaseRad_c>0)?" (Ind)": (phaseRad_c<0)?" (Cap)":" (R)");
+        degOut.innerText = deg.toFixed(1) + "°";
+        pOut.innerText = P_c.toFixed(2) + " W";
+        qOut.innerText = Q_c.toFixed(2) + " VAR";
+        sOut.innerText = S_c.toFixed(2) + " VA";
+
+        // Redibujar triangulos grandes estáticos
+        drawTriangles();
+    }
+
+    function resetState() { R_c=0; XL_c=0; XC_c=0; Xtot_c=0; Z_c=0; phaseRad_c=0; P_c=0; Q_c=0; S_c=0; IL_c=0; }
+
+    // --- TRIÁNGULOS GRANDES (700x500) ---
+    function drawTriangles() {
+        // 1. Z Triangle
+        drawGenericTriangle(zCtx, zCanvas, R_c, Xtot_c, Z_c, phaseRad_c, "Ω", "#b45309", "#9a3412", "#64748b");
+        // 2. Power Triangle
+        drawGenericTriangle(pCtx, pCanvas, P_c, Q_c, S_c, phaseRad_c, "V/W/A", "#10b981", "#f59e0b", "#38bdf8");
+    }
+
+    function drawGenericTriangle(ctx, canvas, hVal, vVal, hipVal, angleRad, unit, colorH, colorV, colorHip) {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        if(hipVal === 0) return;
+
+        // DOBLE TAMAÑO: Factor de escala escalado
+        // Aumentamos los márgenes y reducimos la constante de escalado para que el dibujo quepa y se vea gigante.
+        const marginW = 100;
+        const marginH = 120; // Más margen arriba/abajo para el jitter
+        const drawW = w - marginW * 2;
+        const drawH = h - marginH * 2;
+        
+        // Normalización: S es la hipotenusa. Z o S definen la escala principal.
+        const normalizer = hipVal;
+        const hNorm = hVal / normalizer;
+        const vNorm = Math.abs(vVal) / normalizer; // Dibujo siempre magnitud positiva de Q
+        const hipNorm = 1; // Hipotenusa es 1 en unitario
+
+        // Factor de escala visual. Nos aseguramos de que H o la hipotenusa cubran el drawW.
+        const scale = Math.min(drawW / Math.max(hNorm, 1), drawH / Math.max(vNorm, 1));
+        
+        // Puntos visuales (píxeles)
+        const px = hVal * (drawW / normalizer); 
+        const py = vVal * (drawW / normalizer); // escalado de V respetando signo
+        const hipPx = hipVal * (drawW / normalizer);
+
+        const startX = 80;
+        const startY = (angleRad >= 0) ? h - 70 : 70; // Inductivo arranca abajo, capacitivo arriba
+        const endX = startX + px;
+        const endY = startY - py; // En canvas Inductivo (py>0) es hacia ARRIBA visual, restamos Y.
+
+        // Fondo del ángulo Phi
+        ctx.beginPath();
+        ctx.arc(startX, startY, 50, (angleRad>=0)? 0 : -angleRad, (angleRad>=0)? -angleRad : 0, true);
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = '#64748b'; ctx.font = '16px Arial';
+        ctx.fillText("φ", startX + 60, (angleRad >= 0) ? startY - 20 : startY + 30);
+
+        // 1. Cateto Horizontal - Resistiva / Activa
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, startY);
+        ctx.strokeStyle = colorH; ctx.lineWidth = 5; ctx.stroke();
+        
+        // 2. Cateto Vertical - Reactiva (Q o Xtot)
+        ctx.beginPath();
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = colorV; ctx.lineWidth = 5; ctx.stroke();
+
+        // 3. Hipotenusa - Total (S o Z)
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = colorHip; ctx.lineWidth = 4; ctx.stroke();
+
+        // Textos del triángulo unit
+        ctx.font = 'bold 16px Courier New';
+        // Texto Cateto H
+        ctx.fillStyle = colorH;
+        ctx.fillText(`${hVal.toFixed(1)} ${unit}`, startX + px/2 - 40, (angleRad >= 0) ? startY + 25 : startY - 15);
+        
+        // Texto Cateto V
+        ctx.fillStyle = colorV;
+        ctx.fillText(`${Math.abs(vVal).toFixed(1)} ${unit}`, endX + 15, startY + (endY - startY)/2 + 5);
+
+        // Texto Hipotenusa S
+        ctx.fillStyle = colorHip;
+        ctx.save();
+        ctx.translate(startX + px/2, startY + (endY - startY)/2);
+        ctx.rotate(-angleRad); // Rotación unitaria
+        ctx.fillText(`${hipVal.toFixed(1)} ${unit}`, -50, -12);
+        ctx.restore();
+    }
+
+
+    // --- ANIMACIÓN OSCILOSCOPIO CON JITTER ---
+    let time = 0;
+    function animateOscilloscope() {
+        time++;
+        drawScopeFrame(time);
+        requestAnimationFrame(animateOscilloscope);
+    }
+
+    function drawScopeFrame(frameTime) {
+        waveCtx.fillStyle = '#000'; // Fondo negro puro
+        waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+        
+        if(IL_c === 0) return;
+
+        const w = waveCanvas.width;
+        const h = waveCanvas.height;
+        const midY = h / 2;
+        const periods = 2.5; 
+        const scaleX = w / (periods * 2 * Math.PI);
+        const ampY = h * 0.4; // 40% del alto para tensión
+        
+        // --- CÁLCULO DE JITTER Y INTERFERENCIA (LUJO) ---
+        // Sutil desfasaje aleatorio en el tiempo (jitter de fase)
+        const frameJitterPhase = Math.sin(frameTime / 10) * 0.05 + Math.random() * 0.02;
+        // Jitter horizontal sutil (arrastre de imagen)
+        const frameJitterX = Math.random() * 2 - 1; 
+
+        // 1. Tensión - FÓSFORO VERDE BRILLANTE - Sutil
+        waveCtx.beginPath();
+        for(let x=0; x<=w; x+=1.5) { // Linea más fina
+            const t = (x + frameJitterX) / scaleX + frameJitterPhase; // t en rad + noise
+            const y = midY - Math.sin(t) * (ampY * 1.0);
+            if(x===0) waveCtx.moveTo(x, y);
+            else waveCtx.lineTo(x, y);
+        }
+        waveCtx.strokeStyle = '#10b981'; waveCtx.lineWidth = 1.2; waveCtx.stroke(); // Fósforo fino
+
+        // 2. Corriente (Planchada / Desfasada) - AZUL CRT
+        waveCtx.beginPath();
+        for(let x=0; x<=w; x+=2) {
+            const t = (x + frameJitterX) / scaleX + frameJitterPhase;
+            // 'Planchada' -> ampY * 0.2
+            const y = midY - Math.sin(t - phaseRad_c) * (ampY * 0.2); 
+            if(x===0) waveCtx.moveTo(x, y);
+            else waveCtx.lineTo(x, y);
+        }
+        waveCtx.strokeStyle = '#38bdf8'; waveCtx.lineWidth = 2.0; waveCtx.stroke(); // Fósforo azul grueso
+        
+        // Ruido aleatorio de fósforo suelto
+        for(let i=0; i<15; i++) {
+            const rx = Math.random() * w;
+            const ry = Math.random() * h;
+            waveCtx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+            waveCtx.fillRect(rx, ry, 2, 2);
+        }
+
+        // Grilla CRT
+        waveCtx.beginPath();
+        for(let i=0; i<periods*2*Math.PI; i+= Math.PI/2) {
+            waveCtx.moveTo(80 + i * scaleX, midY - ampY); waveCtx.lineTo(80 + i * scaleX, midY + ampY);
+        }
+        waveCtx.strokeStyle = 'rgba(255,255,255,0.1)'; waveCtx.lineWidth = 0.5; waveCtx.stroke();
+
+        // Etiquetas fijas
+        waveCtx.fillStyle = '#10b981'; waveCtx.font = '11px Arial'; waveCtx.fillText("V(t) [Fósf. Fino]", 10, 15);
+        waveCtx.fillStyle = '#38bdf8'; waveCtx.fillText("I(t) [Planchada]", 10, 30);
+    }
+
+    // Event Listeners
+    [vInput, sysInput, rInput, lInput, cInput].forEach(el => {
+        el.addEventListener('input', calculate);
+    });
+
+    // Iniciar
+    calculate();
+    animateOscilloscope(); // Iniciar animación continua
+</script>
+</body>
+</html>
