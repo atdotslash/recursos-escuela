@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Circuitos con Esquema</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+            --wire: #64748b;
+            --resistor-bg: #fef3c7;
+            --resistor-border: #d97706;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .setup-panel { border-right: 1px solid #e2e8f0; padding-right: 20px; }
+        @media (max-width: 768px) { .setup-panel { border-right: none; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; } }
+
+        .resistor-row {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .connection-ui { margin-bottom: 5px; color: var(--accent); font-weight: bold; }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .visual-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            min-height: 300px;
+        }
+
+        #circuit-svg {
+            width: 100%;
+            height: 250px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            border: 1px solid #22c55e;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-top: 10px; }
+        button {
+            cursor: pointer;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-add { background: var(--accent); color: white; flex: 2; }
+        .btn-reset { background: #ef4444; color: white; flex: 1; }
+        button:hover { opacity: 0.8; }
+        button:disabled { background: #ccc; }
+
+        .logic-text { font-family: monospace; font-size: 0.8rem; color: #64748b; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="setup-panel">
+        <h3>Configuración</h3>
+        <div id="resistors-list">
+            <div class="resistor-row">
+                <label>R1 (Ω):</label>
+                <input type="number" class="r-val" value="100" oninput="updateAll()">
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button id="add-btn" class="btn-add" onclick="addResistor()">+ Añadir Resistencia</button>
+            <button class="btn-reset" onclick="location.reload()">Reset</button>
+        </div>
+
+        <div id="result-area" class="result-box" style="display:none;">
+            <strong>Resistencia Equivalente:</strong>
+            <div id="req-val" style="font-size: 1.5rem; color: #15803d;">0 Ω</div>
+            <div class="logic-text" id="logic-str"></div>
+        </div>
+    </div>
+
+    <div class="visual-panel">
+        <h3>Esquema del Circuito</h3>
+        <svg id="circuit-svg" viewBox="0 0 400 200">
+            <!-- El contenido se genera por JS -->
+        </svg>
+        <p style="font-size: 0.8rem; color: #94a3b8;">*Representación simplificada por bloques</p>
+    </div>
+</div>
+
+<script>
+    let resistors = [{ id: 1, val: 100, type: 'start' }];
+
+    function addResistor() {
+        if (resistors.length >= 5) return;
+        
+        const id = resistors.length + 1;
+        resistors.push({ id: id, val: 100, type: 'serie' });
+        
+        const container = document.getElementById('resistors-list');
+        const div = document.createElement('div');
+        div.className = 'resistor-row';
+        div.innerHTML = `
+            <div class="connection-ui">Conectar R${id} al bloque anterior:</div>
+            <select class="r-type" onchange="updateResistorType(${id}, this.value); updateAll();">
+                <option value="serie">En Serie (+)</option>
+                <option value="paralelo">En Paralelo (||)</option>
+            </select>
+            <input type="number" class="r-val" value="100" oninput="updateResistorVal(${id}, this.value); updateAll();">
+        `;
+        container.appendChild(div);
+        
+        if (resistors.length === 5) document.getElementById('add-btn').disabled = true;
+        updateAll();
+    }
+
+    function updateResistorType(id, type) {
+        const r = resistors.find(r => r.id === id);
+        if (r) r.type = type;
+    }
+
+    function updateResistorVal(id, val) {
+        const r = resistors.find(r => r.id === id);
+        if (r) r.val = parseFloat(val) || 0;
+    }
+
+    function updateAll() {
+        // Actualizar el valor de R1 que es manual
+        resistors[0].val = parseFloat(document.querySelectorAll('.r-val')[0].value) || 0;
+        
+        calculateResult();
+        drawCircuit();
+    }
+
+    function calculateResult() {
+        let total = resistors[0].val;
+        let logic = `R1(${total})`;
+
+        for (let i = 1; i < resistors.length; i++) {
+            let r = resistors[i];
+            if (r.type === 'serie') {
+                total += r.val;
+                logic = `(${logic} + R${r.id}[${r.val}])`;
+            } else {
+                total = (total * r.val) / (total + r.val);
+                logic = `(${logic} || R${r.id}[${r.val}])`;
+            }
+        }
+
+        document.getElementById('result-area').style.display = 'block';
+        document.getElementById('req-val').innerText = total.toFixed(2) + " Ω";
+        document.getElementById('logic-str').innerText = logic;
+    }
+
+    function drawCircuit() {
+        const svg = document.getElementById('circuit-svg');
+        svg.innerHTML = ''; // Limpiar
+        
+        let x = 20, y = 80;
+        let width = 60, height = 30;
+        
+        // Dibujamos el nodo de entrada
+        let drawHTML = `<line x1="0" y1="100" x2="20" y2="100" stroke="#64748b" stroke-width="2" />`;
+
+        // Generar elementos visuales simplificados
+        // Nota: El dibujo es una representación lógica de los pasos
+        let currentX = 20;
+        let currentBoxWidth = 50;
+
+        resistors.forEach((r, index) => {
+            if (r.type === 'start') {
+                drawHTML += drawResistorSVG(currentX, 85, `R1`);
+                currentX += 60;
+            } else if (r.type === 'serie') {
+                drawHTML += `<line x1="${currentX}" y1="100" x2="${currentX+20}" y2="100" stroke="#64748b" stroke-width="2" />`;
+                currentX += 20;
+                drawHTML += drawResistorSVG(currentX, 85, `R${r.id}`);
+                currentX += 60;
+            } else {
+                // Dibujo de paralelo (simplificado: una rama arriba y otra abajo)
+                drawHTML += `
+                    <line x1="${currentX}" y1="100" x2="${currentX+10}" y2="100" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+10}" y1="70" x2="${currentX+10}" y2="130" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+10}" y1="70" x2="${currentX+20}" y2="70" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+10}" y1="130" x2="${currentX+20}" y2="130" stroke="#64748b" stroke-width="2" />
+                `;
+                drawHTML += drawResistorSVG(currentX+20, 55, `R_ant`, 40, 25);
+                drawHTML += drawResistorSVG(currentX+20, 115, `R${r.id}`, 40, 25);
+                drawHTML += `
+                    <line x1="${currentX+60}" y1="70" x2="${currentX+70}" y2="70" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+60}" y1="130" x2="${currentX+70}" y2="130" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+70}" y1="70" x2="${currentX+70}" y2="130" stroke="#64748b" stroke-width="2" />
+                    <line x1="${currentX+70}" y1="100" x2="${currentX+80}" y2="100" stroke="#64748b" stroke-width="2" />
+                `;
+                currentX += 80;
+            }
+        });
+
+        // Salida final
+        drawHTML += `<line x1="${currentX}" y1="100" x2="${currentX+400}" y2="100" stroke="#64748b" stroke-width="2" />`;
+        
+        svg.innerHTML = drawHTML;
+    }
+
+    function drawResistorSVG(x, y, label, w=50, h=30) {
+        return `
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fef3c7" stroke="#d97706" stroke-width="2" rx="2" />
+            <text x="${x + w/2}" y="${y + h/2 + 5}" font-size="10" text-anchor="middle" font-weight="bold">${label}</text>
+        `;
+    }
+
+    // Inicializar
+    updateAll();
+</script>
+
+</body>
+</html>

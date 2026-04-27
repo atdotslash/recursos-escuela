@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador de Circuitos Drag & Drop</title>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #f0f0f0; font-family: sans-serif; }
+        #toolbar { 
+            position: absolute; top: 10px; left: 10px; 
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 10;
+        }
+        #canvas-container { background: white; width: 100vw; height: 100vh; }
+        .instrucciones { font-size: 12px; color: #666; margin-top: 10px; }
+        button { cursor: pointer; padding: 8px; margin: 2px; border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <strong style="display:block; margin-bottom:10px;">Componentes</strong>
+    <button onclick="addComponent('resistor')">Añadir Resistencia (R)</button>
+    <button onclick="addComponent('battery')">Añadir Batería (V)</button>
+    <div class="instrucciones">Arrastra los componentes para ubicarlos.</div>
+</div>
+
+<div id="canvas-container"></div>
+
+<script>
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // 1. Crear el escenario de dibujo
+    const stage = new Konva.Stage({
+        container: 'canvas-container',
+        width: width,
+        height: height,
+    });
+
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    // Función para crear una resistencia visual
+    function createResistor(x, y, name) {
+        const group = new Konva.Group({ x, y, draggable: true });
+
+        // El zig-zag de la resistencia
+        const line = new Konva.Line({
+            points: [0, 10, 10, 10, 15, 0, 25, 20, 35, 0, 45, 20, 55, 10, 65, 10],
+            stroke: 'black',
+            strokeWidth: 2,
+            lineJoin: 'round',
+        });
+
+        const text = new Konva.Text({
+            text: name,
+            x: 15, y: -20,
+            fontSize: 14,
+            fontStyle: 'bold'
+        });
+
+        group.add(line);
+        group.add(text);
+        
+        // Efectos de hover
+        group.on('mouseover', () => { document.body.style.cursor = 'move'; line.stroke('blue'); layer.draw(); });
+        group.on('mouseout', () => { document.body.style.cursor = 'default'; line.stroke('black'); layer.draw(); });
+
+        return group;
+    }
+
+    // Función para crear una batería
+    function createBattery(x, y) {
+        const group = new Konva.Group({ x, y, draggable: true });
+        
+        // Líneas de la batería
+        const line1 = new Konva.Line({ points: [0, 0, 0, 40], stroke: 'black', strokeWidth: 4 });
+        const line2 = new Konva.Line({ points: [10, 10, 10, 30], stroke: 'black', strokeWidth: 2 });
+        
+        group.add(line1);
+        group.add(line2);
+        group.add(new Konva.Text({ text: '10V', x: -10, y: -20, fontSize: 14, fontStyle: 'bold' }));
+
+        return group;
+    }
+
+    let rCount = 1;
+    function addComponent(type) {
+        if (type === 'resistor') {
+            const r = createResistor(100 + (rCount*20), 150, 'R' + rCount);
+            layer.add(r);
+            rCount++;
+        } else {
+            const b = createBattery(50, 150);
+            layer.add(b);
+        }
+        layer.draw();
+    }
+
+    // Dibujar rejilla de fondo opcional
+    function drawGrid() {
+        for (let i = 0; i < width/50; i++) {
+            layer.add(new Konva.Line({
+                points: [i * 50, 0, i * 50, height],
+                stroke: '#eee', strokeWidth: 1,
+            }));
+        }
+        for (let j = 0; j < height/50; j++) {
+            layer.add(new Konva.Line({
+                points: [0, j * 50, width, j * 50],
+                stroke: '#eee', strokeWidth: 1,
+            }));
+        }
+    }
+
+    drawGrid();
+    layer.draw();
+</script>
+
+</body>
+</html>
