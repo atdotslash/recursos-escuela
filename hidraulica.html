@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prensa Hidráulica - EEST N° 1 Zárate</title>
+    <title>Prensa Hidráulica Pro 🚗 - EEST N° 1 Zárate</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -105,7 +105,7 @@
     </div>
 
     <h2 style="color: #0f172a; margin-bottom: 5px;">Prensa Hidráulica (Principio de Pascal)</h2>
-    <p style="color: #64748b; margin-top: 0; font-size: 0.95em;">Cálculo de multiplicación de fuerza, presión del sistema y desplazamiento volumétrico.</p>
+    <p style="color: #64748b; margin-top: 0; font-size: 0.95em;">Cálculo de multiplicación de fuerza, presión del sistema y simulación de carga vehicular 🚗.</p>
 
     <div class="app-grid">
         <div class="panel">
@@ -298,8 +298,7 @@
     function drawHydraulics() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Escalado visual de los tubos para que entren en pantalla (no estrictamente proporcional si la diferencia es brutal)
-        // Mapeamos los diámetros reales a anchos visuales en píxeles.
+        // Escalado visual de los tubos para que entren en pantalla
         const maxVisualW = 180;
         const minVisualW = 30;
         
@@ -330,19 +329,18 @@
         ctx.stroke();
 
         // --- DINÁMICA DEL FLUIDO ---
-        // Desplazamiento visual base: 100px para el tubo 1.
+        // Desplazamiento visual base: 120px para el tubo 1.
         const maxDescend = 120; 
         const stroke1_px = maxDescend * animProgress;
         
         // Conservación volumétrica visual: A1 * h1 = A2 * h2 -> h2 = h1 * (w1/w2)
-        // OJO: Usamos las áreas reales D1/D2 para el cálculo del número, pero para que no se rompa el canvas visualmente, 
-        // escalamos el movimiento visual basado en las áreas visuales dibujadas.
+        // Nota: El dibujo es una representación lógica de los pasos
         const vArea1 = w1 * w1; 
         const vArea2 = w2 * w2;
         const stroke2_px = stroke1_px * (vArea1 / vArea2);
 
         const fluidTop1 = topY + 20 + stroke1_px;
-        const fluidTop2 = topY + 80 - stroke2_px; // Inicialmente el nivel 2 está un poco más bajo para dar margen de subida
+        const fluidTop2 = topY + 80 - stroke2_px; 
 
         // Dibujar Fluido (Celeste)
         ctx.fillStyle = '#0ea5e9';
@@ -365,38 +363,112 @@
 
         // --- CARGA Y FUERZA ---
         
-        // Peso a levantar en Émbolo 2 (Caja pesada)
-        const boxSize = Math.min(w2 - 10, 80);
-        ctx.fillStyle = '#b45309'; // Marrón madera/caja
-        ctx.fillRect(centerX2 - boxSize/2, fluidTop2 - 20 - boxSize, boxSize, boxSize);
-        ctx.strokeRect(centerX2 - boxSize/2, fluidTop2 - 20 - boxSize, boxSize, boxSize);
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center';
-        ctx.fillText("F2", centerX2, fluidTop2 - 20 - boxSize/2 + 5);
-
-        // Fuerza aplicada en Émbolo 1
-        // Flecha roja empujando hacia abajo
+        // Émbolo 1: Flecha roja empujando hacia abajo
         ctx.beginPath();
-        const arrowY = fluidTop1 - 20;
-        ctx.moveTo(centerX1, arrowY - 60);
-        ctx.lineTo(centerX1, arrowY - 5);
+        const arrowY1 = fluidTop1 - 20;
+        ctx.moveTo(centerX1, arrowY1 - 60);
+        ctx.lineTo(centerX1, arrowY1 - 5);
+        ctx.strokeStyle = '#e1306c'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX1, arrowY1);
+        ctx.lineTo(centerX1 - 10, arrowY1 - 15);
+        ctx.lineTo(centerX1 + 10, arrowY1 - 15);
+        ctx.fillStyle = '#e1306c'; ctx.fill();
+        ctx.fillStyle = '#e1306c'; ctx.font = 'bold 14px Arial';
+        ctx.fillText("F1", centerX1, arrowY1 - 65);
+
+
+        // --- ÉMBOLO 2: DIBUJO DEL AUTO Y FUERZA F2 ---
+        
+        // 1. DIBUJAR EL AUTO (🚗) DE PERFIL
+        // Escalamos el auto en función del diámetro del émbolo mayor (w2)
+        const carWidth = Math.min(w2 + 10, 160); // El auto es un poco más ancho que el émbolo pero con tope
+        const carHeight = carWidth * 0.5;
+        const topYCar = fluidTop2 - 20; // Posición de las ruedas sobre el émbolo
+
+        ctx.save();
+        ctx.translate(centerX2, topYCar); // Traslación al centro del émbolo mayor
+
+        // Cuerpo del auto (Forma simplificada)
+        ctx.fillStyle = '#0f4c75'; // Azul oscuro/car
+        ctx.beginPath();
+        // Base y cuerpo
+        const cr = 10; // corner radius
+        ctx.moveTo(-carWidth/2 + cr, -carHeight * 0.5);
+        ctx.lineTo(carWidth/2 - cr, -carHeight * 0.5);
+        ctx.arcTo(carWidth/2, -carHeight * 0.5, carWidth/2, -carHeight*0.5+cr, cr);
+        ctx.lineTo(carWidth/2, -cr);
+        ctx.arcTo(carWidth/2, 0, carWidth/2-cr, 0, cr);
+        ctx.lineTo(-carWidth/2 + cr, 0);
+        ctx.arcTo(-carWidth/2, 0, -carWidth/2, -cr, cr);
+        ctx.lineTo(-carWidth/2, -carHeight*0.5+cr);
+        ctx.arcTo(-carWidth/2, -carHeight * 0.5, -carWidth/2+cr, -carHeight * 0.5, cr);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Techo/Roof
+        ctx.fillStyle = '#0f4c75';
+        ctx.beginPath();
+        ctx.moveTo(-carWidth * 0.25, -carHeight * 0.5);
+        ctx.lineTo(-carWidth * 0.15, -carHeight);
+        ctx.lineTo(carWidth * 0.2, -carHeight);
+        ctx.lineTo(carWidth * 0.35, -carHeight * 0.5);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Window
+        ctx.fillStyle = '#b6e1fc'; // Window blue
+        ctx.beginPath();
+        ctx.moveTo(-carWidth * 0.2, -carHeight * 0.55);
+        ctx.lineTo(-carWidth * 0.1, -carHeight * 0.9);
+        ctx.lineTo(carWidth * 0.15, -carHeight * 0.9);
+        ctx.lineTo(carWidth * 0.3, -carHeight * 0.55);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Ruedas
+        const wheelR = Math.max(carHeight * 0.2, 8);
+        ctx.fillStyle = '#1e293b'; // Slate black/gray
+        ctx.beginPath(); ctx.arc(-carWidth * 0.25, -wheelR, wheelR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(carWidth * 0.25, -wheelR, wheelR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        
+        ctx.fillStyle = '#cbd5e1'; // Hubcaps gray
+        ctx.beginPath(); ctx.arc(-carWidth * 0.25, -wheelR, wheelR*0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(carWidth * 0.25, -wheelR, wheelR*0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        // Etiquetas del Auto (pedagógicas)
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+        ctx.fillText("MASA DE CARGA (Ton)", 0, -carHeight * 0.3);
+        ctx.fillStyle = '#0284c7'; ctx.font = 'bold 14px Courier New';
+        ctx.fillText((F2 / 1000).toFixed(2), 0, -carHeight * 0.1);
+
+        ctx.restore();
+
+        // 2. DIBUJAR LA FUERZA F2 (Flecha roja arriba del auto)
+        // Flecha roja empujando hacia arriba
+        ctx.beginPath();
+        const topYForce = fluidTop2 - 20 - carHeight; // Posición arriba del techo del auto
+        ctx.moveTo(centerX2, topYForce);
+        ctx.lineTo(centerX2, topYForce + 5);
         ctx.strokeStyle = '#e1306c'; ctx.lineWidth = 4; ctx.stroke();
         
         ctx.beginPath();
-        ctx.moveTo(centerX1, arrowY);
-        ctx.lineTo(centerX1 - 10, arrowY - 15);
-        ctx.lineTo(centerX1 + 10, arrowY - 15);
+        ctx.moveTo(centerX2, topYForce - 15);
+        ctx.lineTo(centerX2 - 10, topYForce);
+        ctx.lineTo(centerX2 + 10, topYForce);
         ctx.fillStyle = '#e1306c'; ctx.fill();
 
-        ctx.fillStyle = '#e1306c'; ctx.font = 'bold 14px Arial';
-        ctx.fillText("F1", centerX1, arrowY - 65);
+        ctx.fillStyle = '#e1306c'; ctx.font = 'bold 16px Arial';
+        ctx.fillText("F2", centerX2, topYForce - 25);
+
 
         // --- COTAS FIJAS ---
-        ctx.fillStyle = '#475569'; ctx.font = '12px Arial';
+        ctx.fillStyle = '#475569'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
         ctx.fillText(`D1 = ${D1} mm`, centerX1, baseY + 20);
         ctx.fillText(`D2 = ${D2} mm`, centerX2, baseY + 20);
         
         // Cota de Presión en el centro del fluido
-        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Courier New';
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Courier New'; ctx.textAlign = 'center';
         ctx.fillText(`P = ${P_bar.toFixed(1)} Bar`, (centerX1 + centerX2)/2, baseY - 15);
     }
 
