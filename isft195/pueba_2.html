@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEPSI - Clase 2: Gestión de Incidentes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+/* 1. CONFIGURACIÓN BASE - ESTILO CONSULTORÍA */
+* { box-sizing: border-box; }
+body {
+  background-color: #e2e8f0; display: grid; gap: 20px; grid-template-columns: 1fr; margin: 0; min-height: 100vh; padding: 20px 0; place-items: center;
+}
+.slide-container {
+  align-items: flex-start; background-color: #050505; border-radius: 8px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; font-family: 'Urbanist', sans-serif; height: 720px; justify-content: center; overflow: hidden; padding: 60px; position: relative; width: 1280px;
+}
+.slide-container::before {
+  content: ''; position: absolute; top: -100px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(222, 255, 154, 0.05) 0%, transparent 70%); z-index: 0;
+}
+.slide-container::after {
+  background: rgba(218, 255, 222, 0.2); bottom: 50px; content: ''; height: 1px; left: 60px; position: absolute; right: 60px; z-index: 1;
+}
+.slide-container > * { position: relative; z-index: 2; }
+
+/* 2. TIPOGRAFÍA COHERENTE */
+h1, h2, h3, h4 { color: #f5f5f5; font-weight: 700; margin: 0; }
+h1 span, h2 span, .accent-text { color: #deff9a; }
+p, li, .subtitle { color: #daffde; font-family: 'DM Sans', sans-serif; line-height: 1.5; }
+h1 { font-size: 72px; line-height: 1.1; }
+.slide-title { font-size: 52px; margin-bottom: 40px; text-align: left; width: 100%; border-left: 8px solid #deff9a; padding-left: 20px;}
+h3 { font-size: 32px; margin-bottom: 15px; }
+p, li { font-size: 22px; margin-bottom: 15px; }
+
+/* 3. ESTRUCTURAS DE LAYOUT */
+.content-area { display: flex; flex-direction: column; flex-grow: 1; justify-content: center; width: 100%; }
+.two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; width: 100%; }
+.two-column.tiled > div { background-color: #111; border-radius: 20px; border: 1px solid rgba(222, 255, 154, 0.2); padding: 40px; }
+.tiled-content { display: flex; gap: 30px; width: 100%; align-items: stretch; }
+.tile { background-color: #111; border-radius: 20px; border: 1px solid rgba(218, 255, 222, 0.1); flex: 1; padding: 30px; text-align: left; position: relative; overflow: hidden;}
+.tile .icon { background-color: #deff9a; border-radius: 50%; color: #000; display: flex; font-size: 24px; height: 60px; justify-content: center; align-items: center; margin-bottom: 20px; width: 60px; }
+.tag { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; margin-right: 10px; }
+.tag-high { background-color: #ff4d4d; color: white; }
+.tag-med { background-color: #ffad33; color: white; }
+.tag-low { background-color: #33cc33; color: white; }
+
+/* Code Block */
+.code-block { background: #1e1e1e; padding: 20px; border-radius: 10px; font-family: monospace; color: #d4d4d4; font-size: 18px; border-left: 5px solid #deff9a; }
+    </style>
+</head>
+<body>
+
+<div class="slide-container" id="slide1">
+  <div class="content-area" style="text-align: center;">
+    <h1 style="font-size: 84px;">Gestión de <span>Incidentes</span></h1>
+    <p class="subtitle" style="font-size: 28px; margin-top: 30px;">Bug Life Cycle y el Arte del Reporte Profesional</p>
+    <div style="margin-top: 60px;">
+        <p><strong>Prof. Edgardo Sandoval</strong></p>
+        <p>Metodología de Pruebas de Sistemas (MEPSI)</p>
+    </div>
+  </div>
+</div>
+
+<div class="slide-container" id="slide2">
+    <h2 class="slide-title">Recap: <span>La Barra Roja</span></h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <p>Hace dos semanas, nuestra prueba en <strong>JUnit 5</strong> falló. Encontramos un defecto en el <em>Sistema de Preceptoría</em>.</p>
+                <p><strong>La gran pregunta técnica:</strong> En un equipo de 50 desarrolladores (o en una software factory), ¿cómo avisamos que algo se rompió sin generar caos?</p>
+                <p class="accent-text" style="font-weight: bold; margin-top: 30px;">La respuesta: Documentación y Trazabilidad.</p>
+            </div>
+            <div style="background-color: #111; padding: 30px; border-radius: 15px; border: 2px dashed #ff4d4d;">
+                <h3 style="color: #ff4d4d;">❌ AssertionFailedError</h3>
+                <p style="font-family: monospace; font-size: 18px;">Expected: true<br>Actual: false</p>
+                <p style="font-size: 16px; margin-top: 20px;"><em>"El sistema rechazó la inscripción de un alumno de 18 años por un error de lógica mayor estricto (>)."</em></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide3">
+    <h2 class="slide-title">¿Qué es un <span>Bug Report</span>?</h2>
+    <div class="content-area">
+        <div class="tiled-content">
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-file-contract"></i></div>
+                <h3>Documento Técnico</h3>
+                <p>No es un mensaje de WhatsApp. Es el documento oficial que comunica a los desarrolladores exactamente qué falló, dónde y cómo replicarlo.</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                <h3>Evidencia (Audit Trail)</h3>
+                <p>Protege al equipo de QA. Si el error pasa a producción, el reporte de bug demuestra que el área de testing lo había detectado a tiempo.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide4">
+    <h2 class="slide-title">Anatomía de un <span>Bug Report</span></h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <div>
+                <ul style="list-style-type: square; margin-left: 20px;">
+                    <li><strong>ID Único:</strong> Ej. PREC-045</li>
+                    <li><strong>Título:</strong> Corto y descriptivo.</li>
+                    <li><strong>Entorno:</strong> Win11, Java 21, Versión 1.2</li>
+                    <li><strong>Pasos para reproducir:</strong> El "Paso a paso" exacto para que el programador vea el error.</li>
+                </ul>
+            </div>
+            <div>
+                <ul style="list-style-type: square; margin-left: 20px;">
+                    <li><strong style="color: #ff4d4d;">Resultado Actual:</strong> Lo que hace mal (Ej. Tira error 500).</li>
+                    <li><strong style="color: #deff9a;">Resultado Esperado:</strong> Lo que debería hacer según el cliente.</li>
+                    <li><strong>Evidencia:</strong> Logs, capturas de pantalla, videos.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide5">
+    <h2 class="slide-title">Severidad vs. <span>Prioridad</span></h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <h3>Severidad (Impacto Técnico)</h3>
+                <p>¿Qué tanto daño le hace el error al sistema?</p>
+                <p><span class="tag tag-high">Alta</span> El sistema crashea o borra datos.</p>
+                <p><span class="tag tag-med">Media</span> Falla una función, pero hay alternativas.</p>
+                <p><span class="tag tag-low">Baja</span> Error ortográfico en un menú oculto.</p>
+            </div>
+            <div>
+                <h3>Prioridad (Impacto de Negocio)</h3>
+                <p>¿Qué tan rápido necesitamos arreglarlo?</p>
+                <p><strong>Ejemplo trampa:</strong> El logo de la empresa en la página de inicio está mal escrito.</p>
+                <p><em>Severidad Baja</em> (el sistema funciona perfecto).</p>
+                <p><em>Prioridad ALTA</em> (Marketing nos exige arreglarlo ¡YA!).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide6">
+    <h2 class="slide-title">Bug <span>Life Cycle</span> (ISTQB)</h2>
+    <div class="content-area" style="text-align: center;">
+        <p style="font-size: 24px; margin-bottom: 30px;">El viaje de un defecto desde que nace hasta que muere.</p>
+        <div style="background: white; padding: 15px; border-radius: 10px; display: inline-block;">
+            <h3 style="color: black; margin:0;">[Diagrama: Nuevo -> Asignado -> En Progreso -> Para Testear -> Cerrado / Reabierto]</h3>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide7">
+    <h2 class="slide-title">Herramientas <span>de la Industria</span></h2>
+    <div class="content-area">
+        <div class="tiled-content">
+            <div class="tile" style="text-align: center;">
+                <h3 style="color: #0052CC;">Jira Software</h3>
+                <p>El estándar absoluto en corporaciones y metodologías ágiles.</p>
+            </div>
+            <div class="tile" style="text-align: center;">
+                <h3 style="color: #FCA326;">Trello / GitHub Issues</h3>
+                <p>Ideal para startups, proyectos open source y nuestro proyecto anual.</p>
+            </div>
+            <div class="tile" style="text-align: center;">
+                <h3 style="color: #E34F26;">Bugzilla / Mantis</h3>
+                <p>Sistemas legados. Muy robustos, pero con interfaces antiguas.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide8">
+    <h2 class="slide-title">El Mal Reporte vs. <span>El Buen Reporte</span></h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <div style="border-color: #ff4d4d;">
+                <h3 style="color: #ff4d4d;"><i class="fa-solid fa-thumbs-down"></i> El Inservible</h3>
+                <p><strong>Título:</strong> No anda la inscripción.</p>
+                <p><strong>Pasos:</strong> Intenté anotar a un chico y tiró error.</p>
+                <p><strong>Resultado:</strong> Arréglalo.</p>
+            </div>
+            <div style="border-color: #deff9a;">
+                <h3 style="color: #deff9a;"><i class="fa-solid fa-thumbs-up"></i> El Profesional</h3>
+                <p><strong>Título:</strong> Falla lógica al validar edad = 18 en frm_inscripcion.</p>
+                <p><strong>Pasos:</strong> 1. Abrir app. 2. Ingresar DNI. 3. Poner edad '18'. 4. Clic en Guardar.</p>
+                <p><strong>Res. Actual:</strong> Mensaje "Edad inválida".</p>
+                <p><strong>Res. Esperado:</strong> Inscripción exitosa según Ley vigente.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="slide-container" id="slide9">
+    <div class="content-area" style="text-align: center; justify-content: center;">
+        <h2 style="font-size: 64px;">Manos a la obra</h2>
+        <p style="font-size: 28px; margin-top: 40px;">Actividad de Hoy: Redactar 2 Bug Reports para el Sistema de Preceptoría.</p>
+        <p class="accent-text" style="margin-top: 60px;">Recordatorio: Siguiente evaluación en el <strong>Agile-Sandoval Simulator</strong></p>
+    </div>
+</div>
+
+</body>
+</html>
